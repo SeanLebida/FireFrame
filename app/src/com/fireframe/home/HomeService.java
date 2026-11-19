@@ -1,12 +1,14 @@
 package com.fireframe.home;
 
 import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.SystemClock;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
@@ -17,8 +19,10 @@ import android.view.accessibility.AccessibilityWindowInfo;
 // So this service keeps Amazon's home screen out of sight:
 //  1. As soon as Amazon's launcher opens (Home, or leaving an app) it shows FireFrame as an overlay
 //     window. Overlays aren't held back the way app launches are.
-//  2. It opens the FireFrame app too, which Fire OS holds back for 5 seconds after Home. When the app
-//     has drawn, the overlay steps aside. Same screen, so the swap can't be seen.
+//  2. The overlay stays up. On a Fire TV Edition, stepping aside to the FireFrame activity
+//     shows Amazon's home for a frame, and starting that activity makes Fire OS reclaim Home
+//     and flash Amazon again. The activity still opens once at boot. The overlay hides only
+//     when a different app is in front.
 //  3. An app picked on the overlay in those 5 seconds would be held back too. So FireFrame presses
 //     that app's tile on Amazon's launcher, hidden behind the overlay: Amazon's launches aren't held.
 public class HomeService extends AccessibilityService {
@@ -78,13 +82,10 @@ public class HomeService extends AccessibilityService {
         return SystemClock.elapsedRealtime() < pausedUntil;
     }
 
-    // The FireFrame app is in front and drawn: the overlay can go, unless a menu is open on it.
+    // MainActivity has drawn. Hiding this overlay here is what lets Amazon's home flash through
+    // on a Fire TV Edition, so the cover stays until some other app is in front.
     static void appShown() {
         HomeWatcher.appShown();
-        HomeService s = running;
-        if (s == null || !s.showing) return;
-        if (s.overlay.layers.isEmpty()) s.hide();
-        else s.hideWhenMenusClose = true;
     }
 
     static void menusClosed() {
@@ -109,7 +110,28 @@ public class HomeService extends AccessibilityService {
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, HIDDEN, PixelFormat.OPAQUE);
         attach();
-        registerReceiver(homePressed, new IntentFilter("com.amazon.tv.launcher.HOME_PRESSED"));
+        IntentFilter home = new IntentFilter("com.amazon.tv.launcher.HOME_PRESSED");
+        home.addAction("amazon.intent.action.HOME_PRESSED");
+        registerReceiver(homePressed, home);
+        AccessibilityServiceInfo info = getServiceInfo();
+        if (info != null) {
+            info.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+            setServiceInfo(info);
+        }
+        // Cover immediately so an update or a service restart does not sit on Amazon's home.
+        if (!paused()) show();
+    }
+
+    // Home reaches us before Amazon's launcher paints. Show the cover on the key, and let the
+    // key through so the launcher still opens underneath.
+    @Override
+    protected boolean onKeyEvent(KeyEvent event) {
+        if (!paused() && event.getKeyCode() == KeyEvent.KEYCODE_HOME
+                && event.getAction() == KeyEvent.ACTION_DOWN) {
+            show();
+            if (overlay != null) overlay.onShown(true);
+        }
+        return false;
     }
 
     @Override
@@ -157,12 +179,11 @@ public class HomeService extends AccessibilityService {
         }
     }
 
-    // Amazon's home screen opened. Cover it and bring up the FireFrame app.
+    // Amazon's home screen opened. The overlay is the screen the user sees.
+    // Starting MainActivity from here makes Fire OS reclaim Home and flash Amazon's launcher.
     void cover() {
         if (paused()) return;
         show();
-        startActivity(new Intent(this, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION));
     }
 
     void show() {

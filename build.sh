@@ -23,7 +23,12 @@ rm -rf out; mkdir -p out/classes out/dex
 javac -nowarn -Xlint:-options -encoding UTF-8 -source 1.8 -target 1.8 -bootclasspath "$JAR:$BT/core-lambda-stubs.jar" \
   -d out/classes $(find app/src -name "*.java")
 # shellcheck disable=SC2046
-"$BT/d8" --min-api 22 --release --lib "$JAR" --output out/dex $(find out/classes -name '*.class')
+if ! "$BT/d8" --min-api 22 --release --lib "$JAR" --output out/dex $(find out/classes -name '*.class'); then
+  # d8 34 NPEs on some inner classes. 35.0.0 finishes the same Java 8 bytecode.
+  BT=$SDK/build-tools/35.0.0
+  [ -x "$BT/d8" ] || { echo "d8 34 failed and build-tools 35.0.0 is missing." >&2; exit 1; }
+  "$BT/d8" --min-api 22 --release --lib "$JAR" --output out/dex $(find out/classes -name '*.class')
+fi
 cp out/base.apk out/unsigned.apk; (cd out/dex && zip -q ../unsigned.apk classes.dex)
 "$BT/zipalign" -f 4 out/unsigned.apk out/aligned.apk
 
