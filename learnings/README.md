@@ -71,3 +71,8 @@ Copy this skeleton to start a new entry:
 ## Entries
 
 - `2026-11-19-home-cover.md` — sticky accessibility cover across Home, version 1.1.5.
+- `2026-11-21-voice-results.md` — leave Alexa results uncovered, version 1.1.6.
+- `2026-11-22-hubble-nasa-wallpaper.md` — Hubble and NASA home backdrop, version 1.1.7.
+- `2026-11-21-scenic-dream.md` — bundled scenic daydream, version 1.1.8.
+- `2026-11-21-scenic-kenburns.md` — Ken Burns matrix drift on the scenic dream, version 1.1.9.
+- `2026-11-21-scenic-fifty.md` — scenic slide length 60 seconds, version 1.1.10.

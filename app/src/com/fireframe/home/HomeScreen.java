@@ -128,12 +128,33 @@ public class HomeScreen extends FrameLayout {
     TextView caption, clock;
 
     // TextClock stops ticking in an overlay window, so the time is kept here: updated on the minute.
+    static final java.util.List<HomeScreen> live = new java.util.ArrayList<>();
+
+    // A new Hubble or NASA picture, saved by WallpaperFeed. Every attached home screen shows it.
+    static void onWallpaperReady(String credit) {
+        photoVersion++;
+        for (HomeScreen s : new java.util.ArrayList<>(live)) {
+            s.prefs.edit().putString("wallpaper", CUSTOM).apply();
+            if (!s.isAttachedToWindow()) continue;
+            s.showWallpaper(CUSTOM);
+            if (credit != null && credit.length() > 0) s.showCaption(credit);
+        }
+    }
+
     final Runnable tick = new Runnable() {
         @Override public void run() {
             clock.setText(android.text.format.DateFormat.format(
                     android.text.format.DateFormat.is24HourFormat(ctx) ? "H:mm" : "h:mm", new java.util.Date()));
             removeCallbacks(this);
             postDelayed(this, 60000 - System.currentTimeMillis() % 60000);
+        }
+    };
+
+    // Hourly check. WallpaperFeed itself waits 12 hours between pictures.
+    final Runnable wallpaperTick = new Runnable() {
+        @Override public void run() {
+            WallpaperFeed.maybeRefresh(ctx, customWallpaper());
+            postDelayed(this, 60 * 60 * 1000L);
         }
     };
     Bitmap blur;
@@ -246,11 +267,15 @@ public class HomeScreen extends FrameLayout {
         IntentFilter time = new IntentFilter(Intent.ACTION_TIME_CHANGED); // the TV syncs its clock after boot
         time.addAction(Intent.ACTION_TIMEZONE_CHANGED);
         ctx.registerReceiver(timeChanged, time);
+        live.add(this);
         tick.run();
+        wallpaperTick.run();
     }
 
     @Override
     protected void onDetachedFromWindow() {
+        live.remove(this);
+        removeCallbacks(wallpaperTick);
         ctx.unregisterReceiver(packagesChanged);
         ctx.unregisterReceiver(timeChanged);
         removeCallbacks(tick);

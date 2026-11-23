@@ -42,11 +42,12 @@ public class HomeService extends AccessibilityService {
     static long pausedUntil, ignoreHomeUntil;
     static boolean forSettings, settingsShown;
     static HomeService running;
+    static boolean dreamShowing;
 
     WindowManager wm;
     WindowManager.LayoutParams lp;
     HomeScreen overlay;
-    boolean added, showing, hideWhenMenusClose;
+    boolean added, showing, hideWhenMenusClose, searchResults;
     final Runnable hideNow = this::hide;
 
     // Amazon's launcher sends this, unguarded, from its own goHome. It can reach us a little before the
@@ -99,6 +100,18 @@ public class HomeService extends AccessibilityService {
         if (running != null) running.hide();
     }
 
+    // Screensaver is in front. Keep the cover down so it does not sit on top of the dream.
+    static void onDreamStarted() {
+        dreamShowing = true;
+        hideOverlay();
+    }
+
+    static void onDreamStopped() {
+        dreamShowing = false;
+        HomeService s = running;
+        if (s != null && !paused() && !s.searchResults) s.show();
+    }
+
     @Override
     protected void onServiceConnected() {
         running = this;
@@ -128,6 +141,7 @@ public class HomeService extends AccessibilityService {
     protected boolean onKeyEvent(KeyEvent event) {
         if (!paused() && event.getKeyCode() == KeyEvent.KEYCODE_HOME
                 && event.getAction() == KeyEvent.ACTION_DOWN) {
+            searchResults = false;
             show();
             if (overlay != null) overlay.onShown(true);
         }
@@ -162,12 +176,23 @@ public class HomeService extends AccessibilityService {
         String p = pkg.toString();
         if (p.equals(AMAZON_HOME)) {
             // Fire TV's settings screens live in Amazon's launcher: never cover them.
+            // Voice search results do too. Covering them is what sends the mic back to the dock
+            // before the results can be seen.
             String cls = String.valueOf(e.getClassName());
             if (cls.contains("Settings")) {
                 if (forSettings) settingsShown = true;
                 return;
             }
-            if (settingsShown && cls.contains("HomeActivity")) pausedUntil = 0; // Back out of settings
+            if (cls.contains("DirectiveSearchResults")) {
+                searchResults = true;
+                hide();
+                return;
+            }
+            if (cls.contains("HomeActivity")) {
+                if (e.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) searchResults = false;
+                if (settingsShown) pausedUntil = 0; // Back out of settings
+            }
+            if (searchResults) return;
             cover();
         } else if (!IGNORED.contains(p) && !p.equals(getPackageName())) {
             if (!keepsPause(p)) pausedUntil = 0; // another app opened
@@ -182,11 +207,12 @@ public class HomeService extends AccessibilityService {
     // Amazon's home screen opened. The overlay is the screen the user sees.
     // Starting MainActivity from here makes Fire OS reclaim Home and flash Amazon's launcher.
     void cover() {
-        if (paused()) return;
+        if (paused() || searchResults || dreamShowing) return;
         show();
     }
 
     void show() {
+        if (dreamShowing) return;
         if (overlay == null || !attach()) return;
         overlay.removeCallbacks(hideNow);
         boolean appearing = !showing; // Home again: back to the dock, menus closed
