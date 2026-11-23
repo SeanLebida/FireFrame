@@ -4,7 +4,7 @@ FireFrame's own code is MIT licensed (see [LICENSE](LICENSE)). These bundled ass
 
 | Asset | Source | License |
 | --- | --- | --- |
-| Inter Medium and SemiBold (`app/assets/fonts`) | [rsms/inter](https://github.com/rsms/inter) | SIL Open Font License 1.1, see `app/assets/fonts/Inter-LICENSE.txt` |
+| Ubuntu Medium and Bold (`app/assets/fonts`) | [Ubuntu font family](https://design.ubuntu.com/font) | Ubuntu Font Licence 1.0, see `app/assets/fonts/Ubuntu-UFL.txt` |
 | UI icons: image, grid_view, settings (`app/assets/ui`) | [Material Symbols](https://github.com/google/material-design-icons) | Apache License 2.0 |
 | App logos (`app/assets/logos`) | [Simple Icons](https://github.com/simple-icons/simple-icons) | CC0 1.0. The logos are trademarks of their owners and are used only to label their apps. FireFrame is not affiliated with any of them. |
 | Wallpapers (`app/assets/wallpapers`) | [NASA Image and Video Library](https://images.nasa.gov) | Public domain (NASA media guidelines) |

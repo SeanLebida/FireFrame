@@ -76,3 +76,4 @@ Copy this skeleton to start a new entry:
 - `2026-11-21-scenic-dream.md` — bundled scenic daydream, version 1.1.8.
 - `2026-11-21-scenic-kenburns.md` — Ken Burns matrix drift on the scenic dream, version 1.1.9.
 - `2026-11-21-scenic-fifty.md` — scenic slide length 60 seconds, version 1.1.10.
+- `2026-11-22-ubuntu-font.md` — Ubuntu on photo captions and the rest of the UI, version 1.1.11.

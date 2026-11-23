@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.service.dreams.DreamService;
@@ -58,6 +59,7 @@ public class ScenicDream extends DreamService {
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         caption = new TextView(this);
+        caption.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/Ubuntu-Medium.ttf"));
         caption.setTextColor(Color.WHITE);
         caption.setTextSize(28);
         FrameLayout.LayoutParams cap = new FrameLayout.LayoutParams(

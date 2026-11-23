@@ -194,8 +194,8 @@ public class HomeScreen extends FrameLayout {
         screenW = Math.max(dm.widthPixels, dm.heightPixels);
         screenH = Math.min(dm.widthPixels, dm.heightPixels);
         s = screenW / 1920f; // laid out at 1920x1080, scaled to the real screen
-        medium = Typeface.createFromAsset(ctx.getAssets(), "fonts/Inter-Medium.ttf");
-        semibold = Typeface.createFromAsset(ctx.getAssets(), "fonts/Inter-SemiBold.ttf");
+        medium = Typeface.createFromAsset(ctx.getAssets(), "fonts/Ubuntu-Medium.ttf");
+        semibold = Typeface.createFromAsset(ctx.getAssets(), "fonts/Ubuntu-Bold.ttf");
 
         root = this;
         root.setBackgroundColor(0xFF000000);
